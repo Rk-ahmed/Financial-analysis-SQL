@@ -105,7 +105,7 @@ Includes charts and visuals such as:
 
 1. Clone this repo:
    ```bash
-   git clone https://github.com/your-username/finance-sql-analytics.git
+   git clone https://github.com/rkahmed/finance-sql-analytics.git
 2. Load table creation and sample data scripts:
 
 From schema/create_tables.sql and insert_sample_data.sql
