@@ -1,0 +1,53 @@
+/* PART 2: CUMULATIVE ANALYSIS
+4.	Cumulative expense and income per account
+5.	Cumulative balance over time per account
+6.	Cumulative budget utilization per account */
+
+-- Cumulative expense and income per account 
+-- Expense 
+SELECT AccountId,
+TxnDate,
+Amount,
+SUM (Amount) OVER (Partition By AccountId, Type ORDER BY TxnDate ROWS UNBOUNDED PRECEDING )
+AS CumulativeAmount 
+FROM Transactions
+WHERE Type = 'Expense'
+ORDER BY 
+AccountId,
+TxnDate;
+
+/* Explanation:
+PARTITION BY AccountID, Type calculates cumulative sums separately for each account and transaction type (Income or Expense).
+
+ORDER BY TxnDate ensures the running total respects chronological order.
+
+ROWS UNBOUNDED PRECEDING means the sum includes all previous rows up to the current one. */ 
+
+-- Income 
+SELECT 
+AccountId,
+TxnDate,
+Amount,
+SUM(Amount) OVER (PARTITION BY AccountId, Type ORDER BY TxnDate ROWS UNBOUNDED PRECEDING) AS CumulativeAmount
+FROM Transactions
+WHERE Type = 'Income'
+ORDER BY AccountId, TxnDate;
+
+--  Cumulative balance over time per account
+SELECT AccountId,
+TxnDate,
+Amount,
+SUM(Amount) OVER (Partition By AccountId Order by Txndate ROWS UNBOUNDED PRECEDING) AS CumulativeBalance 
+FROM Transactions
+ORDER BY AccountId,
+TxnDate;
+
+-- Cumulative budget utilization per account
+SELECT 
+AccountID,
+Month,
+BudgetAmount,
+SUM(BudgetAmount) OVER (PARTITION BY AccountID ORDER BY Month ROWS UNBOUNDED PRECEDING) AS Cumulative_budget
+FROM MonthlyBudgets
+ORDER BY AccountID,
+Month;
