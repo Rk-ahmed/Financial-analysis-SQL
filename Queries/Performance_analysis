@@ -1,0 +1,103 @@
+/* PART 3: PERFORMANCE ANALYSIS
+7.	Accounts that exceeded their monthly budget
+8.	Average expense per transaction by category
+9.	Accounts with the highest number of transactions in last 6 months
+10.	Budget vs Actual report with variance calculation */
+
+-- Accounts that exceeded their monthly budget
+-- Step 1: Calculate total expenses per account per month
+WITH MonthlyExpenses AS (
+    SELECT 
+        AccountID,
+        FORMAT(TxnDate, 'yyyy-MM') AS Month,
+        SUM(Amount) AS ActualSpending
+    FROM Transactions
+    WHERE Type = 'Expense'
+    GROUP BY AccountID, FORMAT(TxnDate, 'yyyy-MM')
+)
+
+-- Step 2: Join with MonthlyBudgets and compare spending
+SELECT 
+    b.AccountID,
+    FORMAT(b.Month, 'yyyy-MM') AS Month,
+    b.BudgetAmount,
+    e.ActualSpending,
+    CASE 
+        WHEN e.ActualSpending > b.BudgetAmount THEN 'Exceeded'
+        ELSE 'Within Budget'
+    END AS BudgetStatus
+FROM MonthlyBudgets b
+LEFT JOIN MonthlyExpenses e 
+    ON b.AccountID = e.AccountID 
+    AND FORMAT(b.Month, 'yyyy-MM') = e.Month
+WHERE e.ActualSpending IS NOT NULL
+ORDER BY b.AccountID, Month;
+
+-- Average expense per transaction by category
+SELECT 
+    c.CategoryID,                     -- Or CategoryName if available
+    COUNT(*) AS TransactionCount,
+    SUM(Amount) AS TotalExpense,
+    AVG(Amount) AS AvgExpensePerTransaction
+FROM Transactions t
+JOIN Categories c 
+ON t.CategoryID = c.CategoryID
+WHERE 
+    Type = 'Expense'
+GROUP BY 
+    c.CategoryID
+ORDER BY 
+    AvgExpensePerTransaction DESC;
+
+-- Accounts with the highest number of transactions in last 6 months
+SELECT 
+    a.AccountID,
+    COUNT(t.AccountID) AS transaction_count
+FROM 
+    Accounts AS a
+LEFT JOIN 
+    Transactions AS t 
+    ON a.AccountID = t.AccountID 
+    AND t.TxnDate <= DATEADD(MONTH, -6, GETDATE())  
+GROUP BY 
+    a.AccountID
+ORDER BY 
+    transaction_count DESC;
+
+-- Budget vs Actual report with variance calculation
+-- Step 1: Calculate total monthly expenses per account
+WITH Actuals AS (
+    SELECT 
+        AccountID,
+        FORMAT(TxnDate, 'yyyy-MM') AS Month,
+        SUM(Amount) AS ActualSpending
+    FROM Transactions
+    WHERE Type = 'Expense'
+    GROUP BY AccountID, FORMAT(TxnDate, 'yyyy-MM')
+),
+
+-- Step 2: Prepare monthly budgets with matching format
+Budgets AS (
+    SELECT 
+        AccountID,
+        FORMAT(Month, 'yyyy-MM') AS Month,
+        BudgetAmount
+    FROM MonthlyBudgets
+)
+
+-- Step 3: Combine budgets and actuals, then calculate variance
+SELECT 
+    b.AccountID,
+    b.Month,
+    b.BudgetAmount,
+    ISNULL(a.ActualSpending, 0) AS ActualSpending,
+    ISNULL(a.ActualSpending, 0) - b.BudgetAmount AS Variance,
+    CASE 
+        WHEN b.BudgetAmount = 0 THEN NULL
+        ELSE ROUND(((ISNULL(a.ActualSpending, 0) - b.BudgetAmount) * 100.0) / b.BudgetAmount, 2)
+    END AS VariancePercentage
+FROM Budgets b
+LEFT JOIN Actuals a 
+    ON b.AccountID = a.AccountID AND b.Month = a.Month
+ORDER BY 
+    b.AccountID, b.Month;
