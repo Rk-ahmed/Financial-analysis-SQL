@@ -127,7 +127,11 @@ GitHub for version control and collaboration
 
 
 🙋‍♂️ Author
+
 Rakib Ahmed
+
 Data Analyst | SQL Enthusiast | Power BI Developer
+
 📧 www.linkedin.com/in/rkahmed
+
 📫 Email: rakib429395.@gmail.com
