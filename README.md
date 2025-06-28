@@ -136,4 +136,4 @@ Data Analyst | SQL Enthusiast | Power BI Developer
 
 📧 www.linkedin.com/in/rkahmed
 
-📫 Email: rakib429395.@gmail.com
+📫 Email: rakib429395@gmail.com
