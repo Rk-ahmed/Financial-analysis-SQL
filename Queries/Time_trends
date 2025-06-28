@@ -1,0 +1,59 @@
+/* PART 1: CHANGE OVER TIME TRENDS
+Monthly income and expenses trend for all accounts
+Top 5 highest spending months for each account
+Year-on-year change in income and expense */
+
+-- Monthly income trends
+SELECT AccountId,
+DATEPART(MONTH,TxnDate) as monthly_trend,
+SUM(Amount) as total_amount
+FROM Transactions
+WHERE 
+	Type = 'Income'
+GROUP BY 
+	AccountId, DATEPART(MONTH,TxnDate);
+
+-- Monthly Expense Trend
+SELECT AccountId,
+DATEPART(MONTH,TxnDate) as monthly_trend,
+SUM(Amount) as total_amount
+FROM Transactions
+WHERE 
+	Type = 'Expense'
+GROUP BY 
+	AccountId, DATEPART(MONTH,TxnDate);
+
+
+-- Top 5 highest spending months for each account
+WITH MonthlySpending AS (
+    SELECT 
+        AccountID,
+        FORMAT(TxnDate, 'yyyy-MM') AS SpendingMonth,
+        SUM(Amount) AS TotalSpending
+    FROM Transactions
+    WHERE Type = 'Expense'
+    GROUP BY AccountID, FORMAT(TxnDate, 'yyyy-MM')
+),
+RankedSpending AS (
+    SELECT 
+        AccountID,
+        SpendingMonth,
+        TotalSpending,
+        ROW_NUMBER() OVER (PARTITION BY AccountID ORDER BY TotalSpending DESC) AS rn
+    FROM MonthlySpending
+)
+SELECT 
+    AccountID,
+    SpendingMonth,
+    TotalSpending
+FROM RankedSpending
+WHERE rn <= 5
+ORDER BY AccountID, rn;
+
+-- Year-on-year change in income and expense
+SELECT YEAR(TxnDate) as year,
+SUM(Amount) AS Total_income
+FROM Transactions
+WHERE
+	 type = 'Income'
+GROUP BY YEAR(TxnDate);
