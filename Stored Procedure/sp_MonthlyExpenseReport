@@ -1,0 +1,72 @@
+CREATE PROCEDURE sp_MonthlyExpenseReport
+    @Year INT,
+    @Month INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. Total Income for the Month
+    SELECT 
+        'Total Income' AS Metric,
+        SUM(Amount) AS Value
+    FROM Transactions
+    WHERE Type = 'Income' 
+          AND YEAR(TxnDate) = @Year 
+          AND MONTH(TxnDate) = @Month;
+
+    -- 2. Total Expenses for the Month
+    SELECT 
+        'Total Expenses' AS Metric,
+        SUM(Amount) AS Value
+    FROM Transactions
+    WHERE Type = 'Expense' 
+          AND YEAR(TxnDate) = @Year 
+          AND MONTH(TxnDate) = @Month;
+
+    -- 3. Net Balance for the Month (Income - Expense)
+    SELECT 
+        'Net Balance' AS Metric,
+        ISNULL(SUM(CASE WHEN Type = 'Income' THEN Amount ELSE 0 END), 0) -
+        ISNULL(SUM(CASE WHEN Type = 'Expense' THEN Amount ELSE 0 END), 0) AS Value
+    FROM Transactions
+    WHERE YEAR(TxnDate) = @Year AND MONTH(TxnDate) = @Month;
+
+    -- 4. Cumulative Balance till that Month
+    SELECT 
+        'Cumulative Balance' AS Metric,
+        SUM(Amount) AS Value
+    FROM Transactions
+    WHERE TxnDate <= EOMONTH(DATEFROMPARTS(@Year, @Month, 1));
+
+    -- 5. Total Budget for the Month
+    SELECT 
+        'Total Budget' AS Metric,
+        SUM(BudgetAmount) AS Value
+    FROM MonthlyBudgets
+    WHERE YEAR(Month) = @Year AND MONTH(Month) = @Month;
+
+    -- 6. Budget vs Actual Expense with Variance
+    SELECT 
+        mb.AccountID,
+        mb.BudgetAmount,
+        ISNULL(tx.TotalSpending, 0) AS ActualSpending,
+        ISNULL(tx.TotalSpending, 0) - mb.BudgetAmount AS Variance,
+        CASE 
+            WHEN mb.BudgetAmount = 0 THEN NULL
+            ELSE ROUND((ISNULL(tx.TotalSpending, 0) - mb.BudgetAmount) * 100.0 / mb.BudgetAmount, 2)
+        END AS VariancePercent
+    FROM MonthlyBudgets mb
+    LEFT JOIN (
+        SELECT AccountID, SUM(Amount) AS TotalSpending
+        FROM Transactions
+        WHERE Type = 'Expense' 
+              AND YEAR(TxnDate) = @Year 
+              AND MONTH(TxnDate) = @Month
+        GROUP BY AccountID
+    ) tx ON mb.AccountID = tx.AccountID
+    WHERE YEAR(mb.Month) = @Year AND MONTH(mb.Month) = @Month;
+
+END;
+
+
+EXEC sp_MonthlyExpenseReport @Year = 2021, @Month = 12;
