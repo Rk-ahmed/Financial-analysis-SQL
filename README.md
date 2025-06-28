@@ -119,11 +119,13 @@ Use SQL Server Management Studio (SSMS) to run queries from /queries/
 Load dashboard.pbix into Power BI for visualization
 
 📌 Tools Used
+
 SQL Server (T-SQL)
 
 Power BI for dashboarding
 
 GitHub for version control and collaboration
+
 
 
 🙋‍♂️ Author
