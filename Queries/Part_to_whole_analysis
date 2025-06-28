@@ -1,0 +1,58 @@
+/* PART 4: PART-TO-WHOLE ANALYSIS
+11.	What % of total expenses went to each category?
+12.	What is the share of each account in total income?
+13.	Which 3 categories contribute the most to expenses? */
+
+-- What % of total expenses went to each category 
+SELECT 
+    CategoryID,  -- Replace with CategoryName if available
+    SUM(Amount) AS TotalExpense,
+    ROUND(
+        SUM(Amount) * 100.0 / 
+        (SELECT SUM(Amount) FROM Transactions WHERE Type = 'Expense'),
+        2
+    ) AS PercentOfTotal
+FROM 
+    Transactions
+WHERE 
+    Type = 'Expense'
+GROUP BY 
+    CategoryID
+ORDER BY 
+    PercentOfTotal DESC;
+
+-- What is the share of each account in total income?
+SELECT 
+    AccountID,
+    SUM(Amount) AS TotalIncome,
+    CONCAT(
+        ROUND(
+            SUM(Amount) * 100.0 / 
+            (SELECT SUM(Amount) FROM Transactions WHERE Type = 'Income'),
+            2
+        ),
+        '%'
+    ) AS ShareOfTotalIncome
+FROM 
+    Transactions
+WHERE 
+    Type = 'Income'
+GROUP BY 
+    AccountID
+ORDER BY 
+    ShareOfTotalIncome DESC;
+
+-- Which 3 categories contribute the most to expenses?
+SELECT TOP 3
+    c.CategoryName,
+    SUM(t.Amount) AS TotalExpense
+FROM 
+    Transactions t
+JOIN 
+    Categories c ON t.CategoryID = c.CategoryID
+WHERE 
+    t.Type = 'Expense'
+GROUP BY 
+    c.CategoryName
+ORDER BY 
+    TotalExpense DESC;
